@@ -26,7 +26,7 @@ def add_sample_info(df, path_column: str, s_rate: bool = True, n_samples: bool =
 def fft_calc(y, rate: int):
     """
     Calculate fft.
-    :param y: signal as numpy array
+    :param y: np.ndarray
     :param rate: sampling rate as int
     :return: (magnitude, frequency values)
     """
