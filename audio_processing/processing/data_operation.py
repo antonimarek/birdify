@@ -31,12 +31,12 @@ def resample_to_file(in_path: str, out_path: str, in_format: str = 'mp3', out_fo
     pass
 
 
-def resample_dir(dir_path_in: str, dir_path_out: str, in_format: str = 'mp3', out_format: str = 'mp3'):
+def resample_dir(dir_path_in: str, dir_path_out: str, in_format: str = 'mp3', out_format: str = 'mp3', sr: int = 22050):
     f_list = os.listdir(dir_path_in)
     for file in f_list:
         in_path = dir_path_in + '/' + file
         out_path = dir_path_out + '/' + file
-        resample_to_file(in_path=in_path, out_path=out_path, in_format=in_format, out_format=out_format)
+        resample_to_file(in_path=in_path, out_path=out_path, in_format=in_format, out_format=out_format, sr=sr)
     return f'{len(f_list)} files from {dir_path_in} resampled into {dir_path_out}'
 
 
