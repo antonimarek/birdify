@@ -78,3 +78,5 @@ class Visualize:
         self.plot_prepare(plot_size, key_list, images, n_col=n_col, title='Filter Bank Coefficients')
         plt.show()
         pass
+
+def class_distribution():
