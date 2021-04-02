@@ -26,10 +26,12 @@ from tqdm import tqdm
 
 
 def resample_to_file(in_path: str, out_path: str, in_format: str = 'mp3', out_format: str = 'mp3', sr: int = 22050,
-                     channels: int = 1):
+                     channels: int = 1, ffmpeg_path: str = r"C:/ffmpeg/bin/ffmpeg.exe"):
+    AudioSegment.converter = ffmpeg_path
     sample = AudioSegment.from_file(in_path, in_format)
     sample = sample.set_frame_rate(sr)
-    sample = sample.set_channels(channels)
+    if channels:
+        sample = sample.set_channels(channels)
     sample.export(out_path, out_format)
     pass
 
