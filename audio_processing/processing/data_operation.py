@@ -1,6 +1,3 @@
-# import librosa
-# import sox
-# import pandas as pd
 import numpy as np
 from pydub import AudioSegment
 import os
@@ -9,9 +6,6 @@ from numba import jit
 from scipy.ndimage import interpolation, grey_erosion, grey_dilation
 from scipy.signal import stft
 import array
-
-
-# from python_speech_features import mfcc, logfbank
 
 
 def resample_to_file(in_path: str, out_path: str, in_format: str = 'mp3', out_format: str = 'mp3', sr: int = 22050,
