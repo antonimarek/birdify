@@ -54,13 +54,14 @@ def mel_spectrogram(in_path: str, in_format: str = 'mp3', sr: int = 22050, n_mel
 
 
 def feature_extraction(files: List[str], classes: List[int], dir_path: str, leftover: bool = False, n_mel: int = 128,
-                       to_dir: str = False, full_length: bool = True,
+                       to_dir: str = False, full_length: bool = True, padding: bool = True,
                        deltas: bool = True, feat_type: str = 'mel_spec', s_len: int = 256, f_scale: bool = True,
                        in_format: str = 'mp3',
                        ffmpeg_path: str = r"C:/ffmpeg/bin/ffmpeg.exe"):
     """
     Function extracting audio features for machine learning.
 
+    :param padding:
     :param to_dir:
     :param full_length:
     :param n_mel: number of mel filters
@@ -95,19 +96,26 @@ def feature_extraction(files: List[str], classes: List[int], dir_path: str, left
                             X.append(com_mfcc[:, n * s_len:(n + 1) * s_len])
                             y.append(cl)
                         else:
-                            np.savez_compressed(to_dir + 'c_' + str(cl) + '_' + file.split('.')[0] + str(i) + '.npz',
-                                                com_mfcc[:, n * s_len:(n + 1) * s_len])
+                            np.save(to_dir + 'c_' + str(cl) + '_' + file.split('.')[0] + str(i) + '.npy',
+                                    com_mfcc[:, n * s_len:(n + 1) * s_len])
                             i += 1
                 if leftover & (subs_lo > 0):
+                    if padding:
+                        com_mfcc_rest = com_mfcc[:, -subs_lo:]
+                        cmf_s = com_mfcc_rest.shape
+                        com_mfcc_rest = np.concatenate((com_mfcc_rest,
+                                                        np.zeros((cmf_s[0], s_len - cmf_s[1]), dtype=int)), axis=1)
+                    else:
+                        com_mfcc_rest = com_mfcc[:, -subs_lo:]
                     if not to_dir:
-                        X_lo.append(com_mfcc[:, -subs_lo:])
+                        X_lo.append(com_mfcc_rest)
                         y_lo.append(cl)
                     else:
-                        np.savez_compressed(to_dir + 'c_' + str(cl) + '_' + file.split('.')[0] + str(i) + '.npz',
-                                            com_mfcc[:, -subs_lo:])
+                        np.save(to_dir + 'c_' + str(cl) + '_' + file.split('.')[0] + str(i) + '.npy',
+                                com_mfcc_rest)
                         i += 1
             else:
-                np.savez_compressed(to_dir + 'c_' + str(cl) + '_' + file.split('.')[0] + '.npz', com_mfcc)
+                np.save(to_dir + 'c_' + str(cl) + '_' + file.split('.')[0] + '.npy', com_mfcc)
         elif feat_type == 'mel_spec':
             mel_spec = mel_spectrogram(in_path=dir_path + file, in_format=in_format, ffmpeg_path=ffmpeg_path,
                                        n_mel=n_mel)
@@ -121,19 +129,27 @@ def feature_extraction(files: List[str], classes: List[int], dir_path: str, left
                             X.append(mel_spec[:, n * s_len:(n + 1) * s_len])
                             y.append(cl)
                         else:
-                            np.savez_compressed(to_dir + 'c_' + str(cl) + '_' + file.split('.')[0] + str(i) + '.npz',
-                                                mel_spec[:, n * s_len:(n + 1) * s_len])
+                            np.save(to_dir + 'c_' + str(cl) + '_' + file.split('.')[0] + str(i) + '.npy',
+                                    mel_spec[:, n * s_len:(n + 1) * s_len])
                             i += 1
                 if leftover & (subs_lo > 0):
+                    if padding:
+                        mel_spec_rest = mel_spec[:, -subs_lo:]
+                        msr_s = mel_spec_rest.shape
+                        mel_spec_rest = np.concatenate((mel_spec_rest,
+                                                        np.zeros((msr_s[0], s_len - msr_s[1]), dtype=int)), axis=1)
+                    else:
+                        mel_spec_rest = mel_spec[:, -subs_lo:]
+
                     if not to_dir:
-                        X_lo.append(mel_spec[:, -subs_lo:])
+                        X_lo.append(mel_spec_rest)
                         y_lo.append(cl)
                     else:
-                        np.savez_compressed(to_dir + 'c_' + str(cl) + '_' + file.split('.')[0] + str(i) + '.npz',
-                                            mel_spec[:, -subs_lo:])
+                        np.save(to_dir + 'c_' + str(cl) + '_' + file.split('.')[0] + str(i) + '.npy',
+                                mel_spec_rest)
                         i += 1
             else:
-                np.savez_compressed(to_dir + 'c_' + str(cl) + '_' + file.split('.')[0] + '.npz', mel_spec)
+                np.save(to_dir + 'c_' + str(cl) + '_' + file.split('.')[0] + '.npy', mel_spec)
     X, y = np.array(X), np.array(y)
     if not (to_dir or full_length):
         if leftover:
@@ -143,41 +159,3 @@ def feature_extraction(files: List[str], classes: List[int], dir_path: str, left
     else:
         pass
 
-
-def class_balancing(X, y):
-    pass
-
-
-def normalize(sample):
-    sample = np.subtract(sample, np.mean(sample))
-    sample = sample / np.std(sample)
-    return sample
-
-
-def time_shift(sample):
-    s_len = sample.shape[1]
-    div_loc = np.random.randint(0, s_len)
-    sample = np.concatenate((sample[:, div_loc:], sample[:, :div_loc]), axis=1)
-    return sample
-
-
-def pitch_shift():
-    pass
-
-
-def combine_audio(sample_1, sample_2):
-    w1 = np.random.random()
-    w2 = 1 - w1
-    sample = normalize(sample_1) * w1 + normalize(sample_2) * w2
-    sample = min_max_scale(sample)
-    return sample
-
-
-def add_noise(sample, noise, d_fac=.4):
-    sample = normalize(sample) + normalize(noise) * d_fac
-    sample = min_max_scale(sample)
-    return sample
-
-
-def augmentation(sample):
-    pass
