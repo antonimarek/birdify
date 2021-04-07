@@ -15,12 +15,12 @@ def min_max_scale(array):
 
 
 def comprehensive_mfcc(in_path: str, deltas: bool = True, in_format: str = 'mp3', sr: int = 22050, f_scale: bool = True,
-                       ffmpeg_path: str = r"C:/ffmpeg/bin/ffmpeg.exe"):
+                       ffmpeg_path: str = r"C:/ffmpeg/bin/ffmpeg.exe", n_mel: int = 128):
     AudioSegment.converter = ffmpeg_path
     sample = AudioSegment.from_file(in_path, in_format)
     sample = sample.get_array_of_samples()
     sample = np.array(sample, dtype=float)
-    mfccs = librosa.feature.mfcc(sample, n_mfcc=13, sr=sr, hop_length=int(512 * .25), n_mels=128, n_fft=512)
+    mfccs = librosa.feature.mfcc(sample, n_mfcc=13, sr=sr, hop_length=int(512), n_mels=n_mel, n_fft=512)
     if f_scale:
         mfccs = min_max_scale(mfccs)
     if deltas:
@@ -85,7 +85,7 @@ def feature_extraction(files: List[str], classes: List[int], dir_path: str, left
     for file, cl in tqdm(zip(files, classes), total=len(files)):
         if feat_type == 'mfcc':
             com_mfcc = comprehensive_mfcc(in_path=dir_path + file, in_format=in_format, ffmpeg_path=ffmpeg_path,
-                                          deltas=deltas, f_scale=f_scale)
+                                          deltas=deltas, f_scale=f_scale, n_mel=n_mel)
             if not full_length:
                 subs_num = com_mfcc.shape[1] // s_len
                 subs_lo = com_mfcc.shape[1] % s_len
