@@ -4,12 +4,14 @@ import numpy as np
 # import pandas as pd
 from .feature_preparation import min_max_scale
 from tensorflow.keras.utils import Sequence, to_categorical
+
+
 # from tensorflow.data import Dataset
 
 
 class AudioDataGenerator(Sequence):
     def __init__(self, pandas_df, noise_IDs: List[str], sample_dir: str, noise_dir: str, batch_size=32, dim=(54, 256),
-                 n_channels=1, n_classes=50, over: bool = True, augment: bool = True, shuffle=True):
+                 n_channels=1, n_classes=None, over: bool = True, augment: bool = True, shuffle=True):
         """Initialization"""
         self.over = over
         self.augment = augment
@@ -49,10 +51,10 @@ class AudioDataGenerator(Sequence):
         self.temp_df = self.pandas_df
         if self.over:
             for curr_class in samples_class.index[1:]:
-                add_samples = samples_class[0] - samples_class[samples_class.index == curr_class]
-                gen_sample = self.pandas_df[self.pandas_df.catg == curr_class].sample(add_samples.values[0],
-                                                                                      replace=True)
-                self.temp_df.append(gen_sample)
+                add_samples = samples_class.values[0] - samples_class[samples_class.index == curr_class].values[0]
+                if add_samples > 0:
+                    gen_sample = self.pandas_df[self.pandas_df.catg == curr_class].sample(add_samples, replace=True)
+                    self.temp_df.append(gen_sample)
 
         self.indexes = np.arange(len(self.temp_df))
         if self.shuffle == True:
