@@ -5,6 +5,7 @@ from tqdm import tqdm
 from numba import jit
 from scipy.ndimage import interpolation, grey_erosion, grey_dilation
 from scipy.signal import stft
+from .basics import *
 import array
 
 
@@ -37,9 +38,7 @@ def binary_h_vector(matrix):
 
 
 def extract_signal_noise(in_path, in_format, median_multi: float = 3, flip_mask: bool = True, sr: int = 22050):
-    song = AudioSegment.from_file(in_path, in_format)
-    samples = song.get_array_of_samples()
-    samples = np.array(samples, dtype=float)
+    samples = audio_to_array(in_path, in_format)
 
     window_size: int = 512
     overlapping = .75
@@ -82,15 +81,14 @@ def extract_signal_noise(in_path, in_format, median_multi: float = 3, flip_mask:
     return new_sample
 
 
-def split_signal_noise(in_path: str, s_out_path: str, n_out_path: str, in_format: str = 'mp3', out_format: str = 'mp3',
-                       sr: int = 22050,
-                       ffmpeg_path: str = r"C:/ffmpeg/bin/ffmpeg.exe"):
-    AudioSegment.converter = ffmpeg_path
+def split_signal_noise(in_path: str, s_path: str, n_path: str, in_format: str = 'mp3', out_format: str = 'mp3',
+                       sr: int = 22050):
+    # AudioSegment.converter = ffmpeg_path
     signal = extract_signal_noise(in_path, in_format, median_multi=3, flip_mask=True, sr=sr)
     noise = extract_signal_noise(in_path, in_format, median_multi=2.5, flip_mask=False, sr=sr)
 
-    signal.export(s_out_path, out_format)
-    noise.export(n_out_path, out_format)
+    signal.export(s_path, out_format)
+    noise.export(n_path, out_format)
     pass
 
 
