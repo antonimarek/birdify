@@ -2,7 +2,7 @@ from typing import List
 
 import numpy as np
 # import pandas as pd
-from .feature_preparation import min_max_scale
+from audio_processing.processing.extraction.feature_preparation import min_max_scale
 from tensorflow.keras.utils import Sequence, to_categorical
 
 

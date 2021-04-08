@@ -24,8 +24,8 @@ def comprehensive_mfcc(in_path: str, deltas: bool = True, in_format: str = 'mp3'
     if f_scale:
         mfccs = min_max_scale(mfccs)
     if deltas:
-        delta_mfccs = librosa.feature.delta(mfccs)
-        delta2_mfccs = librosa.feature.delta(mfccs, order=2)
+        delta_mfccs = librosa.feature.delta(mfccs, mode='nearest')
+        delta2_mfccs = librosa.feature.delta(mfccs, order=2, mode='nearest')
         if f_scale:
             delta_mfccs = min_max_scale(delta_mfccs)
             delta2_mfccs = min_max_scale(delta2_mfccs)
