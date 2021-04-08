@@ -1,8 +1,8 @@
 from typing import List
 
 import numpy as np
-# import pandas as pd
-from audio_processing.processing.extraction.feature_preparation import min_max_scale
+from ..extraction.feature_preparation import min_max_scale
+from .augmentation import time_shift, add_noise
 from tensorflow.keras.utils import Sequence, to_categorical
 
 
@@ -82,38 +82,3 @@ class AudioDataGenerator(Sequence):
             y[i] = list_labels[i]
 
         return X, to_categorical(y, num_classes=self.n_classes)
-
-
-def normalize(sample):
-    sample = np.subtract(sample, np.mean(sample))
-    sample = sample / np.std(sample)
-    return sample
-
-
-def time_shift(sample):
-    s_len = sample.shape[1]
-    div_loc = np.random.randint(0, s_len)
-    sample = np.concatenate((sample[:, div_loc:], sample[:, :div_loc]), axis=1)
-    return sample
-
-
-def pitch_shift():
-    pass
-
-
-def combine_audio(sample_1, sample_2):
-    w1 = np.random.random()
-    w2 = 1 - w1
-    sample = normalize(sample_1) * w1 + normalize(sample_2) * w2
-    sample = min_max_scale(sample)
-    return sample
-
-
-def add_noise(sample, noise, d_fac=.4):
-    sample = normalize(sample) + normalize(noise) * d_fac * np.random.random()
-    sample = min_max_scale(sample)
-    return sample
-
-
-def augmentation(sample):
-    pass
