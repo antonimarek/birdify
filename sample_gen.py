@@ -30,8 +30,11 @@ serial_chunks(in_paths=in_signal_list, in_format='mp3', class_ids=class_ids, len
               out_format='npz')
 
 # generate noise chunks
-# in_noise_path = r'./samples/noise/'
-# out_noise_path = r'./samples/chunks_noise/'
+in_noise_path = r'./samples/noise/'
+out_noise_path = r'./samples/chunks_noise/'
+in_noise_list = [in_noise_path+f for f in files]
+serial_chunks(in_paths=in_noise_list[:150], in_format='mp3', class_ids=class_ids[:150], length=3,
+              out_dir=out_noise_path, out_format='npz')
 
 
 # files = data.Path.to_list()
