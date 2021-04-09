@@ -38,7 +38,7 @@ def binary_h_vector(matrix):
 
 
 def extract_signal_noise(in_path, in_format, median_multi: float = 3, flip_mask: bool = True, sr: int = 22050):
-    samples = audio_to_array(in_path, in_format)
+    samples, song = audio_to_array(in_path, in_format, as_sample=True)
 
     window_size: int = 512
     overlapping = .75
