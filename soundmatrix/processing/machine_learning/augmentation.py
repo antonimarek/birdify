@@ -1,8 +1,10 @@
 import numpy as np
 from soundmatrix.processing.extraction.feature_preparation import min_max_scale
 import librosa
+from numba import jit
 
 
+@jit(nopython=True)
 def normalize(sample):
     sample = np.subtract(sample, np.mean(sample))
     sample = sample / np.std(sample)
@@ -27,6 +29,7 @@ def pitch_shift(sample, sr: int = 22050, half_tone_var: float = 2):
     return sample
 
 
+@jit(nopython=True)
 def combine_audio(sample_1, sample_2):
     w1 = np.random.uniform(.5, 1)
     w2 = 1 - w1
@@ -35,6 +38,7 @@ def combine_audio(sample_1, sample_2):
     return sample
 
 
+@jit(nopython=True)
 def add_noise(sample, noise, d_fac=.4, r_mltp: bool = True):
     r_multiplier = 1
     if r_mltp:
@@ -46,14 +50,14 @@ def add_noise(sample, noise, d_fac=.4, r_mltp: bool = True):
 
 def augment_audio(sample, noise_sample=None, comb_sample=None, sr: int = 22050):
     sample = time_shift(sample)
-    sample = pitch_shift(sample, sr=sr)
+    # sample = pitch_shift(sample, sr=sr)
     if comb_sample is not None:
-        comb_sample = time_shift(comb_sample)
-        comb_sample = pitch_shift(comb_sample, sr=sr)
+        # comb_sample = time_shift(comb_sample)
+        # comb_sample = pitch_shift(comb_sample, sr=sr)
         sample = combine_audio(sample, comb_sample)
     if noise_sample is not None:
-        noise_sample = time_shift(noise_sample)
-        noise_sample = pitch_shift(noise_sample, sr=sr)
+        # noise_sample = time_shift(noise_sample)
+        # noise_sample = pitch_shift(noise_sample, sr=sr)
         sample = add_noise(sample, noise_sample, r_mltp=False)
     sample = min_max_scale(sample)
     return sample
