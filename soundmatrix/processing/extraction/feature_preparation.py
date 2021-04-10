@@ -14,6 +14,21 @@ def min_max_scale(array):
     return array
 
 
+def mfcc(sample, f_scale: bool = True, n_mel: int = 128, sr: int = 22050, deltas: bool = False):
+    f_mfcc = librosa.feature.mfcc(sample, n_mfcc=13, sr=sr, hop_length=int(512), n_mels=n_mel, n_fft=512)
+    if f_scale:
+        f_mfcc = min_max_scale(f_mfcc)
+    if deltas:
+        delta_mfccs = librosa.feature.delta(f_mfcc, mode='nearest')
+        delta2_mfccs = librosa.feature.delta(f_mfcc, order=2, mode='nearest')
+        if f_scale:
+            delta_mfccs = min_max_scale(delta_mfccs)
+            delta2_mfccs = min_max_scale(delta2_mfccs)
+        comp_mfcc = np.concatenate((f_mfcc, delta_mfccs, delta2_mfccs))
+        return comp_mfcc
+    return f_mfcc
+
+
 def comprehensive_mfcc(in_path: str, deltas: bool = True, in_format: str = 'mp3', sr: int = 22050, f_scale: bool = True,
                        ffmpeg_path: str = r"C:/ffmpeg/bin/ffmpeg.exe", n_mel: int = 128):
     AudioSegment.converter = ffmpeg_path
@@ -34,23 +49,24 @@ def comprehensive_mfcc(in_path: str, deltas: bool = True, in_format: str = 'mp3'
     return mfccs
 
 
-def mel_spectrogram(in_path: str, in_format: str = 'mp3', sr: int = 22050, n_mel: int = 128,
-                    ffmpeg_path: str = r"C:/ffmpeg/bin/ffmpeg.exe"):
+def mel_spec(sample, window_size: int = 512, overlapping=.5, bot_bins_out: int = 0, top_bins_out: int = 0,
+             n_mel: int = 128, sr: int = 22050):
+    m_spec = librosa.feature.melspectrogram(sample, sr=sr, n_fft=window_size,
+                                            hop_length=int(window_size * (1 - overlapping)),
+                                            n_mels=n_mel)
+    m_spec = librosa.power_to_db(m_spec)
+    m_spec = m_spec[bot_bins_out:-top_bins_out]
+    return m_spec
+
+
+def file_mel_spec(in_path: str, in_format: str = 'mp3', sr: int = 22050, n_mel: int = 128,
+                  ffmpeg_path: str = r"C:/ffmpeg/bin/ffmpeg.exe"):
     AudioSegment.converter = ffmpeg_path
     song = AudioSegment.from_file(in_path, in_format)
     samples = song.get_array_of_samples()
     samples = np.array(samples, dtype=float)
-
-    window_size: int = 512
-    overlapping = .5
-    bot_bins_out: int = 5
-    top_bins_out: int = 5
-    mel_spec = librosa.feature.melspectrogram(samples, sr=sr, n_fft=window_size,
-                                              hop_length=int(window_size * (1 - overlapping)),
-                                              n_mels=n_mel)
-    mel_spec = librosa.power_to_db(mel_spec)
-    mel_spec = mel_spec[bot_bins_out:-top_bins_out]
-    return mel_spec
+    m_s = mel_spec(samples, sr=sr, n_mel=n_mel)
+    return m_s
 
 
 def feature_extraction(files: List[str], classes: List[int], dir_path: str, leftover: bool = False, n_mel: int = 128,
@@ -117,8 +133,8 @@ def feature_extraction(files: List[str], classes: List[int], dir_path: str, left
             else:
                 np.save(to_dir + 'c_' + str(cl) + '_' + file.split('.')[0] + '.npy', com_mfcc)
         elif feat_type == 'mel_spec':
-            mel_spec = mel_spectrogram(in_path=dir_path + file, in_format=in_format, ffmpeg_path=ffmpeg_path,
-                                       n_mel=n_mel)
+            mel_spec = file_mel_spec(in_path=dir_path + file, in_format=in_format, ffmpeg_path=ffmpeg_path,
+                                     n_mel=n_mel)
             if not full_length:
                 subs_num = mel_spec.shape[1] // s_len
                 subs_lo = mel_spec.shape[1] % s_len
@@ -159,3 +175,16 @@ def feature_extraction(files: List[str], classes: List[int], dir_path: str, left
     else:
         pass
 
+
+def get_feature(sample, f_type: str = 'mpcc', max_len=None):
+    if f_type == 'mel_spec':
+        s_feat = mel_spec(sample)
+    elif f_type == 'mpcc':
+        s_feat = mfcc(sample)
+    elif f_type == 'mpcc_deltas':
+        s_feat = mfcc(sample, deltas=True)
+    else:
+        raise ValueError('No feature type specified!')
+    if max_len is not None:
+        s_feat = s_feat[:, :max_len]
+    return s_feat
