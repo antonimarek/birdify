@@ -5,15 +5,15 @@ from tensorflow.keras.utils import Sequence, to_categorical
 from ..extraction.feature_preparation import min_max_scale, get_feature
 from .augmentation import augment_audio
 from typing import List
+import tensorflow as tf
 
-
-# from tensorflow.data import Dataset
 
 class AudioDataGenerator(Sequence):
     """
     Tensorflow (Keras) generator for audio data.
     Supported f_type: {'mpcc','mpcc_deltas','mel_spec'}
     """
+
     def __init__(self, pandas_df, noise_IDs: List[str], sample_dir: str, noise_dir: str = None, batch_size=32,
                  n_channels=1, n_classes=None, over: bool = True, augment: bool = True, shuffle=True,
                  feature_params: dict = {'f_type': 'mpcc'}):
@@ -59,7 +59,6 @@ class AudioDataGenerator(Sequence):
         return shape
 
     def on_epoch_end(self):
-
         samples_class = self.pandas_df.catg.value_counts()
         self.temp_df = self.pandas_df
         if self.over:
@@ -81,14 +80,18 @@ class AudioDataGenerator(Sequence):
 
         # Generate data
         for i, ID in enumerate(list_IDs_temp):
-            sample = np.load(self.sample_dir + ID)['a']
+            with open(self.sample_dir + ID, 'rb') as f:
+                sample = np.load(f)['a']
             if self.augment:
                 aug_params = {}
                 if self.noise_dir is not None:
-                    noise = np.load(self.noise_dir + np.random.choice(self.noise_IDs))['a']
+                    with open(self.noise_dir + np.random.choice(self.noise_IDs), 'rb') as f:
+                        noise = np.load(f)['a']
                     aug_params['noise_sample'] = noise
-                id2 = np.random.choice(self.pandas_df.ID)
-                sample2 = np.load(self.sample_dir + id2)['a']
+                id2 = np.random.choice(self.pandas_df[self.pandas_df.catg == list_labels[i]].ID)
+                with open(self.sample_dir + id2, 'rb') as f:
+                    sample2 = np.load(f)['a']
+                # sample2 = np.load(self.sample_dir + id2)['a']
                 aug_params['comb_sample'] = sample2
                 sample = augment_audio(sample, **aug_params)
             sample = min_max_scale(sample)
@@ -102,10 +105,6 @@ class AudioDataGenerator(Sequence):
 
         return X, to_categorical(y, num_classes=self.n_classes)
 
-    # def list_noise(self):
-    #     if self.noise_dir is not None:
-    #         self.noise_paths = [f for f in os.listdir(self.noise_dir) if '.' in f]
-    #     pass
 
 
 """
