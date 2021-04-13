@@ -1,10 +1,10 @@
 import numpy as np
-from soundmatrix.processing.extraction.feature_preparation import min_max_scale
+# from soundmatrix.processing.extraction.feature_preparation import min_max_scale
 import librosa
-from numba import jit
+# from numba import jit
 
 
-@jit(nopython=True)
+# @jit(nopython=True)
 def normalize(sample):
     sample = np.subtract(sample, np.mean(sample))
     sample = sample / np.std(sample)
@@ -29,22 +29,23 @@ def pitch_shift(sample, sr: int = 22050, half_tone_var: float = 2):
     return sample
 
 
-@jit(nopython=True)
+# @jit(nopython=True)
 def combine_audio(sample_1, sample_2):
     w1 = np.random.uniform(.5, 1)
     w2 = 1 - w1
     sample = normalize(sample_1) * w1 + normalize(sample_2) * w2
-    sample = min_max_scale(sample)
+    sample = normalize(sample)
     return sample
 
 
-@jit(nopython=True)
+# @jit(nopython=True)
 def add_noise(sample, noise, d_fac=.4, r_mltp: bool = True):
-    r_multiplier = 1
     if r_mltp:
         r_multiplier = np.random.random()
+    else:
+        r_multiplier = 1
     sample = normalize(sample) + normalize(noise) * d_fac * r_multiplier
-    sample = min_max_scale(sample)
+    sample = normalize(sample)
     return sample
 
 
@@ -59,5 +60,5 @@ def augment_audio(sample, noise_sample=None, comb_sample=None, sr: int = 22050):
         # noise_sample = time_shift(noise_sample)
         # noise_sample = pitch_shift(noise_sample, sr=sr)
         sample = add_noise(sample, noise_sample, r_mltp=False)
-    sample = min_max_scale(sample)
+    sample = normalize(sample)
     return sample

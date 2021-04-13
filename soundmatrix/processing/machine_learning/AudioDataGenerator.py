@@ -30,7 +30,7 @@ class AudioDataGenerator(Sequence):
         self.n_classes = n_classes
         self.shuffle = shuffle
         self.on_epoch_end()
-        self.shape = self.__shape__()
+        self.shape = self.shape()
         # self.list_noise()
 
     def __len__(self):
@@ -51,7 +51,7 @@ class AudioDataGenerator(Sequence):
 
         return X, y
 
-    def __shape__(self):
+    def shape(self):
         test_sample = self.pandas_df.iloc[0].ID
         sample = np.load(self.sample_dir + test_sample)['a']
         sample = get_feature(sample, **self.feature_params)
@@ -75,35 +75,72 @@ class AudioDataGenerator(Sequence):
     def __data_generation(self, list_IDs_temp, list_labels):
 
         # Initialization
-        X = np.empty((self.batch_size, *self.shape[:-1], self.n_channels))
-        y = np.empty((self.batch_size), dtype=int)
+        # X = np.empty((self.batch_size, *self.shape[:-1], self.n_channels))
+        # y = np.empty((self.batch_size), dtype=int)
+
+        dataset = tf.data.Dataset.from_tensor_slices(list_IDs_temp)
+        dataset_cat = tf.data.Dataset.from_tensor_slices(list_labels)
+
+        dataset_cat = dataset_cat.map(lambda item: tf.numpy_function(
+                                      self.to_cat, [item], np.float),
+                                      num_parallel_calls=tf.data.AUTOTUNE)
+        dataset = dataset.map(lambda item: tf.numpy_function(
+                              self.map_func, [item], np.double),
+                              num_parallel_calls=tf.data.AUTOTUNE
+                              )
+        dataset = np.array(list(dataset.as_numpy_iterator()))
+        dataset_cat = np.array(list(dataset_cat.as_numpy_iterator()))
+
+        # dataset = tf.data.Dataset.zip((dataset, dataset_cat))
 
         # Generate data
-        for i, ID in enumerate(list_IDs_temp):
-            with open(self.sample_dir + ID, 'rb') as f:
-                sample = np.load(f)['a']
-            if self.augment:
-                aug_params = {}
-                if self.noise_dir is not None:
-                    with open(self.noise_dir + np.random.choice(self.noise_IDs), 'rb') as f:
-                        noise = np.load(f)['a']
-                    aug_params['noise_sample'] = noise
-                id2 = np.random.choice(self.pandas_df[self.pandas_df.catg == list_labels[i]].ID)
-                with open(self.sample_dir + id2, 'rb') as f:
-                    sample2 = np.load(f)['a']
-                # sample2 = np.load(self.sample_dir + id2)['a']
-                aug_params['comb_sample'] = sample2
-                sample = augment_audio(sample, **aug_params)
-            sample = min_max_scale(sample)
-            sample = get_feature(sample, **self.feature_params)
-            # feature type
-            shp = sample.shape
-            X[i] = sample.reshape((*shp, 1))
+        # for i, ID in enumerate(list_IDs_temp):
+        #     with open(self.sample_dir + ID, 'rb') as f:
+        #         sample = np.load(f)['a']
+        #     if self.augment:
+        #         aug_params = {}
+        #         if self.noise_dir is not None:
+        #             with open(self.noise_dir + np.random.choice(self.noise_IDs), 'rb') as f:
+        #                 noise = np.load(f)['a']
+        #             aug_params['noise_sample'] = noise
+        #         id2 = np.random.choice(self.pandas_df[self.pandas_df.catg == list_labels[i]].ID)
+        #         with open(self.sample_dir + id2, 'rb') as f:
+        #             sample2 = np.load(f)['a']
+        #         # sample2 = np.load(self.sample_dir + id2)['a']
+        #         aug_params['comb_sample'] = sample2
+        #         sample = augment_audio(sample, **aug_params)
+        #     sample = min_max_scale(sample)
+        #     sample = get_feature(sample, **self.feature_params)
+        #     # feature type
+        #     shp = sample.shape
+        #     X[i] = sample.reshape((*shp, 1))
+        #
+        #     # Store class
+        #     y[i] = list_labels[i]
+        # return X, to_categorical(y, num_classes=self.n_classes)
+        return dataset, dataset_cat
 
-            # Store class
-            y[i] = list_labels[i]
+    def map_func(self, feature_path):
+        feature_path = feature_path.decode('UTF-8')
+        f_p = self.sample_dir + feature_path
+        feature = np.load(f_p)['a']
+        if self.augment:
+            aug_params = {}
+            if self.noise_dir is not None:
+                noise = np.load(self.noise_dir + np.random.choice(self.noise_IDs))['a']
+                aug_params['noise_sample'] = noise
+            sample2_id = np.random.choice(self.pandas_df[self.pandas_df.catg == int(feature_path[0])].ID.values)
+            sample2 = np.load(self.sample_dir + sample2_id)['a']
+            aug_params['comb_sample'] = sample2
+            feature = augment_audio(feature, **aug_params)
+        feature = get_feature(feature)
+        feature = min_max_scale(feature)
+        feature = feature.reshape(self.shape)
+        return feature
 
-        return X, to_categorical(y, num_classes=self.n_classes)
+    def to_cat(self, y):
+        y = to_categorical(y, num_classes=self.n_classes)
+        return y
 
 
 

@@ -1,10 +1,37 @@
-from pydub import AudioSegment
-from tqdm import tqdm
+# from pydub import AudioSegment
+# from tqdm import tqdm
 import numpy as np
-import librosa
+# import librosa
 from numba import jit
-from scipy.signal import stft
-from typing import List
+# from scipy.signal import stft
+# from typing import List
+from ..machine_learning.augmentation import normalize
+import tensorflow_io as tfio
+from tensorflow import transpose
+from tensorflow import cast, float32
+
+
+def get_feature(sample, f_type: str = 'mel_spec', max_len=None):
+    if f_type == 'mel_spec':
+        s_feat = tfio.experimental.audio.spectrogram(sample, nfft=1024, window=1024, stride=256)
+        s_feat = cast(s_feat, dtype=float32)
+        s_feat = tfio.experimental.audio.melscale(
+            s_feat, rate=22050, mels=128, fmin=500, fmax=11000
+        )
+        s_feat = tfio.experimental.audio.dbscale(s_feat, top_db=80).numpy()
+        s_feat = transpose(s_feat)
+    # elif f_type == 'mpcc':
+    #     s_feat = mfcc(sample)
+    # elif f_type == 'mpcc_deltas':
+    #     s_feat = mfcc(sample, deltas=True)
+    else:
+        raise ValueError('No feature type specified!')
+    if max_len is not None:
+        s_feat = s_feat[:, :max_len]
+    s_feat = normalize(s_feat)
+    f_shape = s_feat.shape
+    s_feat = s_feat.reshape((*f_shape, 1))
+    return s_feat
 
 
 @jit(nopython=True)
@@ -14,6 +41,7 @@ def min_max_scale(array):
     return array
 
 
+"""
 def mfcc(sample, f_scale: bool = True, n_mel: int = 128, sr: int = 22050, deltas: bool = False):
     f_mfcc = librosa.feature.mfcc(sample, n_mfcc=13, sr=sr, hop_length=int(512), n_mels=n_mel, n_fft=512)
     if f_scale:
@@ -74,25 +102,25 @@ def feature_extraction(files: List[str], classes: List[int], dir_path: str, left
                        deltas: bool = True, feat_type: str = 'mel_spec', s_len: int = 256, f_scale: bool = True,
                        in_format: str = 'mp3',
                        ffmpeg_path: str = r"C:/ffmpeg/bin/ffmpeg.exe"):
-    """
-    Function extracting audio features for machine learning.
-
-    :param padding:
-    :param to_dir:
-    :param full_length:
-    :param n_mel: number of mel filters
-    :param files: list of file names
-    :param classes: list of classes (after factorization)
-    :param dir_path: path to sample directory
-    :param leftover: if True returns chunk cutting remains (can be input for augmentation)
-    :param deltas: bool = True, calculate deltas and delta deltas
-    :param feat_type: name of feature types ('mfcc', 'mel_spec')
-    :param s_len: chunk length
-    :param f_scale: if True min_max scaling features
-    :param in_format: audio file format (default = 'mp3')
-    :param ffmpeg_path: path to ffmpeg codec (necessary when in_format='mp3'
-    :return: X, y, (X_leftover, y_leftover) - numpy.array array of features and classes (respectively)
-    """
+    # 
+    # Function extracting audio features for machine learning.
+    # 
+    # :param padding:
+    # :param to_dir:
+    # :param full_length:
+    # :param n_mel: number of mel filters
+    # :param files: list of file names
+    # :param classes: list of classes (after factorization)
+    # :param dir_path: path to sample directory
+    # :param leftover: if True returns chunk cutting remains (can be input for augmentation)
+    # :param deltas: bool = True, calculate deltas and delta deltas
+    # :param feat_type: name of feature types ('mfcc', 'mel_spec')
+    # :param s_len: chunk length
+    # :param f_scale: if True min_max scaling features
+    # :param in_format: audio file format (default = 'mp3')
+    # :param ffmpeg_path: path to ffmpeg codec (necessary when in_format='mp3'
+    # :return: X, y, (X_leftover, y_leftover) - numpy.array array of features and classes (respectively)
+    # 
 
     X = []
     y = []
@@ -174,17 +202,4 @@ def feature_extraction(files: List[str], classes: List[int], dir_path: str, left
             return X, y
     else:
         pass
-
-
-def get_feature(sample, f_type: str = 'mpcc', max_len=None):
-    if f_type == 'mel_spec':
-        s_feat = mel_spec(sample)
-    elif f_type == 'mpcc':
-        s_feat = mfcc(sample)
-    elif f_type == 'mpcc_deltas':
-        s_feat = mfcc(sample, deltas=True)
-    else:
-        raise ValueError('No feature type specified!')
-    if max_len is not None:
-        s_feat = s_feat[:, :max_len]
-    return s_feat
+"""
