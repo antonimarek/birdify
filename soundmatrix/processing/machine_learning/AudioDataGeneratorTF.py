@@ -10,7 +10,7 @@ import tensorflow as tf
 class AudioDataGenerator:
     """
     Tensorflow (Keras) generator for audio data.
-    Supported f_type: {'mpcc','mpcc_deltas','mel_spec'}
+    Supported f_type: {'mel_spec'}
     """
 
     def __init__(self, pandas_df, noise_IDs: List[str], sample_dir: str, noise_dir: str = None, batch_size=32,
@@ -55,9 +55,9 @@ class AudioDataGenerator:
         if self.augment:
             # random assignment of second sample of same class and random noise from whole input set
             self.pandas_df['ID2'] = self.pandas_df['catg'].apply(lambda x:
-                                                                     np.random.choice(
-                                                                         self.pandas_df[self.pandas_df.catg == x].ID)
-                                                                     )
+                                                                 np.random.choice(
+                                                                     self.pandas_df[self.pandas_df.catg == x].ID)
+                                                                 )
             self.pandas_df['ID_noise'] = \
                 pd.Series(self.noise_IDs).sample(len(self.pandas_df), replace=True).values
 
@@ -84,12 +84,13 @@ class AudioDataGenerator:
         dataset = dataset.map(self.generate_features,
                               num_parallel_calls=tf.data.AUTOTUNE)
 
-        dataset = dataset.batch(self.batch_size, drop_remainder=False)
+        dataset = dataset.batch(self.batch_size, drop_remainder=False).prefetch(150)
+
         return dataset
 
     def load_signal(self, X, y):
         X = tf.numpy_function(
-            func=self.load_single, inp=[X], Tout=tf.float32)
+            func=self.load_single, inp=[X], Tout=tf.double)
         return X, y
 
     def load_single(self, X):
