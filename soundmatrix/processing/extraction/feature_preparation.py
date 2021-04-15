@@ -13,12 +13,12 @@ from tensorflow import cast, float32
 
 def get_feature(sample, f_type: str = 'mel_spec', max_len=None):
     if f_type == 'mel_spec':
-        s_feat = tfio.experimental.audio.spectrogram(sample, nfft=1024, window=1024, stride=256)
+        s_feat = tfio.experimental.audio.spectrogram(sample, nfft=1024, window=1024, stride=259)
         s_feat = cast(s_feat, dtype=float32)
         s_feat = tfio.experimental.audio.melscale(
             s_feat, rate=22050, mels=128, fmin=500, fmax=11000
         )
-        s_feat = tfio.experimental.audio.dbscale(s_feat, top_db=80).numpy()
+        s_feat = tfio.experimental.audio.dbscale(s_feat, top_db=60).numpy()
         s_feat = transpose(s_feat)
     # elif f_type == 'mpcc':
     #     s_feat = mfcc(sample)
