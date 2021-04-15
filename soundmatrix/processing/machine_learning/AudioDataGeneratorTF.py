@@ -32,7 +32,7 @@ class AudioDataGenerator:
         self.over_sample()
 
     def shape(self):
-        test_sample = self.pandas_df.iloc[0].ID
+        test_sample = self.pandas_df.iloc[np.random.choice(range(len(self.pandas_df)))].ID
         sample = np.load(self.sample_dir + test_sample)['a']
         sample = get_feature(sample, **self.feature_params)
         shape = sample.shape
@@ -54,17 +54,17 @@ class AudioDataGenerator:
     def data_generator(self):
         if self.augment:
             # random assignment of second sample of same class and random noise from whole input set
-            self.pandas_df['ID2'] = self.pandas_df['catg'].apply(lambda x:
-                                                                 np.random.choice(
-                                                                     self.pandas_df[self.pandas_df.catg == x].ID)
-                                                                 )
-            self.pandas_df['ID_noise'] = \
+            second_samples = self.pandas_df['catg'].apply(lambda x:
+                                                         np.random.choice(
+                                                             self.pandas_df[self.pandas_df.catg == x].ID)
+                                                         )
+            noise_samples = \
                 pd.Series(self.noise_IDs).sample(len(self.pandas_df), replace=True).values
 
             # creating tf dataset
             dataset = tf.data.Dataset.from_tensor_slices((self.pandas_df.ID,
-                                                          self.pandas_df.ID2,
-                                                          self.pandas_df.ID_noise,
+                                                          second_samples,
+                                                          noise_samples,
                                                           self.pandas_df.catg))
             # shuffle must be placed before mapping functions for speed reasons
             if self.shuffle:
@@ -83,9 +83,7 @@ class AudioDataGenerator:
         # mapping function to perform feature extraction from signals
         dataset = dataset.map(self.generate_features,
                               num_parallel_calls=tf.data.AUTOTUNE)
-
         dataset = dataset.batch(self.batch_size, drop_remainder=False).prefetch(150)
-
         return dataset
 
     def load_signal(self, X, y):
