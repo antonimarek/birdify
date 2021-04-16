@@ -1,10 +1,7 @@
 import numpy as np
-# from soundmatrix.processing.extraction.feature_preparation import min_max_scale
 import librosa
-# from numba import jit
 
 
-# @jit(nopython=True)
 def normalize(sample):
     sample = np.subtract(sample, np.mean(sample))
     sample = sample / np.std(sample)
@@ -22,14 +19,13 @@ def time_shift(sample):
         return ValueError("Sample can't have more than 2 dimensions!")
 
 
-def pitch_shift(sample, sr: int = 22050, half_tone_var: float = 2):
+def pitch_shift(sample, sr: int = 22050, half_tone_var: float = 3):
     sample = librosa.effects.pitch_shift(y=sample, sr=sr,
                                          n_steps=np.random.uniform(-half_tone_var, half_tone_var),
                                          bins_per_octave=24)
     return sample
 
 
-# @jit(nopython=True)
 def combine_audio(sample_1, sample_2):
     w1 = np.random.uniform(.5, 1)
     w2 = 1 - w1
@@ -38,8 +34,7 @@ def combine_audio(sample_1, sample_2):
     return sample
 
 
-# @jit(nopython=True)
-def add_noise(sample, noise, d_fac=.3, r_mltp: bool = True):
+def add_noise(sample, noise, d_fac=.4, r_mltp: bool = False):
     if r_mltp:
         r_multiplier = np.random.random()
     else:
@@ -51,7 +46,7 @@ def add_noise(sample, noise, d_fac=.3, r_mltp: bool = True):
 
 def augment_audio(sample, noise_sample=None, comb_sample=None, sr: int = 22050):
     sample = time_shift(sample)
-    # sample = pitch_shift(sample, sr=sr)
+    sample = pitch_shift(sample, sr=sr)
     if comb_sample is not None:
         comb_sample = time_shift(comb_sample)
         # comb_sample = pitch_shift(comb_sample, sr=sr)
