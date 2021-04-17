@@ -1,2 +1,2 @@
-from . import exploration
+from . import visuals
 from . import processing

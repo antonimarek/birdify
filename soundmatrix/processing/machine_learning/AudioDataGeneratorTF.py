@@ -15,7 +15,7 @@ class AudioDataGenerator:
 
     def __init__(self, pandas_df, noise_IDs: List[str], sample_dir: str, noise_dir: str = None, batch_size=32,
                  n_channels=1, n_classes=None, over: bool = True, augment: bool = True, shuffle=True,
-                 feature_params: dict = {'f_type': 'mel_spec'}):
+                 pre_fetch=tf.data.AUTOTUNE, feature_params: dict = {'f_type': 'mel_spec'}):
 
         self.feature_params = feature_params
         self.over = over
@@ -28,6 +28,7 @@ class AudioDataGenerator:
         self.n_channels = n_channels
         self.n_classes = n_classes
         self.shuffle = shuffle
+        self.pre_fetch = pre_fetch
         self.shape = self.shape()
         self.over_sample()
 
@@ -55,9 +56,9 @@ class AudioDataGenerator:
         if self.augment:
             # random assignment of second sample of same class and random noise from whole input set
             second_samples = self.pandas_df['catg'].apply(lambda x:
-                                                         np.random.choice(
-                                                             self.pandas_df[self.pandas_df.catg == x].ID)
-                                                         )
+                                                          np.random.choice(
+                                                              self.pandas_df[self.pandas_df.catg == x].ID)
+                                                          )
             noise_samples = \
                 pd.Series(self.noise_IDs).sample(len(self.pandas_df), replace=True).values
 
@@ -83,7 +84,7 @@ class AudioDataGenerator:
         # mapping function to perform feature extraction from signals
         dataset = dataset.map(self.generate_features,
                               num_parallel_calls=tf.data.AUTOTUNE)
-        dataset = dataset.batch(self.batch_size, drop_remainder=False).prefetch(150)
+        dataset = dataset.batch(self.batch_size, drop_remainder=False).prefetch(self.pre_fetch)
         return dataset
 
     def load_signal(self, X, y):
