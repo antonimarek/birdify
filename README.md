@@ -22,10 +22,6 @@ Python script for resampling and signal/noise splitting: ```sample_gen.py```
 All audio data used in this project come from **Bird songs from Europe (xeno-canto)**
 collection built from a xeno-canto API query and uploaded on Kaggle by Francisco de Abreu e Lima.
 
-In theory, the recordings contain only male songs from 50 bird species, but
-in reality they may contain i.e. mixtures of calls and songs from both male and female birds from the same or different species.
-This can certainly affect the classification results.
-
 
 ---
 ## References
