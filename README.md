@@ -2,8 +2,8 @@
 #### _Classification of bird songs based on audio recordings using Convolutional Neural Networks_
 ![Alt text](figures/parus_major.jpg?raw=true "Parus major")
 
-## File structure
-**Main project file** in Jupyter Notebook: ``` birdify.ipynb```\
+## Project structure
+**Main project file** (Jupyter Notebook): ``` birdify.ipynb```\
 Library containing all core preprocessing methods can be found under: ```/soundmatrix```\
 Csv file containing information about samples: ```dataset.csv```\
 Python script for resampling and signal/noise splitting: ```sample_gen.py```
