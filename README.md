@@ -1,6 +1,13 @@
 # birdify
-#### _Classification of bird songs based on audio recordings using Convolutional Neural Networks_
+## _Classification of bird species based on vocalization audio recordings using Convolutional Neural Networks_
 ![Alt text](figures/parus_major.jpg?raw=true "Parus major")
+
+## About
+The problem of bird vocalization classification is well known and has been addressed
+numerous times. Specifically in Data Science papers, it has appeared repeatedly over
+the years with progressively better attempts. One of succesful approaches is using
+Convolutional Neural Network with visual representation for audio signal
+(e.g. (mel) spectrograms) as features. Such approach is also implemented in this project.
 
 ## Project structure
 **Main project file** (Jupyter Notebook): ``` birdify.ipynb```\
